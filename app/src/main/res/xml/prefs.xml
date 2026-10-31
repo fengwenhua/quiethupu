@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    主设置页：状态卡 -> 异常横幅 -> AD/UI/PV 分组 -> 页脚。
+    每个功能行的 android:key 必须与 Feature.key 完全一致；
+    标题/摘要由 SettingsFragment 从 Feature 注入，这里只声明 key 与分组图标。
+    blocked 功能保留 Feature 条目与编号，但不在设置页渲染。
+-->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        android:key="status"
+        android:layout="@layout/preference_status_card"
+        android:selectable="false"
+        android:title="@string/status_title" />
+
+    <Preference
+        android:key="warning"
+        android:layout="@layout/preference_warning_banner"
+        android:selectable="false"
+        android:visible="false" />
+
+    <PreferenceCategory android:title="@string/group_ad">
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_splash_cold" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_splash_hot" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_feed" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_refresh" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_banner" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_float" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_popup" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_search_icon" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_preload" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_shake_jump" />
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_reward_video" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/group_ui">
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ui"
+            android:key="ui_update_dialog" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/group_pv">
+
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_pv"
+            android:key="pv_clipboard_ad" />
+
+    </PreferenceCategory>
+
+    <Preference
+        android:key="footer"
+        android:layout="@layout/preference_footer"
+        android:selectable="false" />
+
+</PreferenceScreen>
