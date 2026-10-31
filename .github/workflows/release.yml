@@ -1,0 +1,143 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing source tag to release, e.g. v0.1.1'
+        required: true
+        type: string
+      publish_release:
+        description: 'Publish the GitHub release after signing (disable for a test artifact only)'
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: quiethupu-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'fengwenhua/quiethupu' && github.actor == 'fengwenhua' && github.ref == 'refs/heads/main'
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Android SDK 37
+        run: bash scripts/setup-android.sh
+
+      - name: Read version
+        id: version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          values = dict(line.split('=', 1) for line in Path('version.properties').read_text().splitlines()
+                        if '=' in line and not line.startswith('#'))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('name=%s\n' % values['versionName'].strip())
+              out.write('code=%s\n' % values['versionCode'].strip())
+          PY
+
+      - name: Verify tag matches version.properties
+        env:
+          TAG: ${{ inputs.tag }}
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          if [ "v$VERSION" != "$TAG" ]; then
+            echo "tag $TAG does not match v$VERSION" >&2
+            exit 1
+          fi
+
+      - name: Unit tests and lint
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug
+
+      - name: Decode signing keystore
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          test -n "$RELEASE_KEYSTORE_BASE64"
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/quiethupu-release.jks"
+          chmod 600 "$RUNNER_TEMP/quiethupu-release.jks"
+          {
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/quiethupu-release.jks"
+            echo "KEYSTORE_PASSWORD=$RELEASE_STORE_PASSWORD"
+            echo "KEY_ALIAS=$RELEASE_KEY_ALIAS"
+            echo "KEY_PASSWORD=$RELEASE_KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        run: ./gradlew --no-daemon :app:assembleRelease
+
+      - name: Verify signature, package and version
+        run: |
+          build_tools=$(ls -1d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          python3 scripts/check-signing.py \
+            --apk app/build/outputs/apk/release/app-release.apk \
+            --build-tools "$build_tools"
+
+      - name: Collect release assets
+        env:
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/quiethupu-$VERSION.apk"
+          cp app/build/outputs/mapping/release/mapping.txt "dist/mapping-$VERSION.txt"
+          (cd dist && sha256sum "quiethupu-$VERSION.apk" > SHA256SUMS)
+          ls -la dist
+
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiethupu-signed
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        if: inputs.publish_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          VERSION: ${{ steps.version.outputs.name }}
+        run: |
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "QuietHupu $VERSION" \
+            --notes-file CHANGELOG.md
+
+      - name: Sync to Xposed-Modules-Repo (optional)
+        if: inputs.publish_release
+        env:
+          GH_TOKEN: ${{ secrets.MODULE_REPO_TOKEN }}
+          VERSION: ${{ steps.version.outputs.name }}
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo 'MODULE_REPO_TOKEN not configured; skipped Xposed-Modules-Repo sync.'
+            exit 0
+          fi
+          module_tag="$VERSION_CODE-$VERSION"
+          gh release create "$module_tag" dist/* \
+            --repo Xposed-Modules-Repo/io.github.fengwenhua.quiethupu \
+            --title "$VERSION" \
+            --notes-file CHANGELOG.md

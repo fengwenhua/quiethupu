@@ -27,6 +27,16 @@
   https://github.com/yigenhuobah/quietbox 链接。
 - PV-01 剪贴板广告默认开启；AD-11 激励视频/短剧默认拦截。
 
+### 工程
+
+- applicationId 改为 `io.github.fengwenhua.quiethupu`，`StatusProvider` authority 同步更新。
+- 版本号集中到 `version.properties`。
+- 新增 GitHub Actions：`build.yml`（单测/lint/debug）与 `release.yml`
+  （tag 构建、release environment secrets 签名、证书 pin、GitHub Release、
+  可选同步 Xposed-Modules-Repo）。
+- 签名证书 SHA-256 固定在 `release-trust.properties`。
+- 清理 QuietBox 遗留资源（AB 目录、未使用图标/颜色/字符串）与 `.DS_Store`。
+
 ## 0.1.0 - 2026-10-31
 
 首个版本，基于 QuietBox 0.9.0 的工程骨架重写为虎扑（`com.hupu.games`）去广告模块。

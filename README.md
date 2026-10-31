@@ -195,20 +195,51 @@ python3 tools/check-anchors.py <还原后的 DEX 目录>
 
 ---
 
-## 六、构建
+## 六、构建与发布
 
-工具链：AGP 9.4.1 + Gradle 9.7.1（wrapper）+ JDK 17 + compileSdk 37 / minSdk 29 / targetSdk 36。
+工具链：AGP 9.4.1 + Gradle 9.7.1（wrapper）+ JDK 17/21 + compileSdk 37 / minSdk 29 / targetSdk 36。
 `app/build.gradle` 强制 `androidx.recyclerview:recyclerview:1.4.0`，用于兼容本机离线缓存
 （material/preference 声明的 1.1.0 未缓存），有网环境同样适用。
 
+版本号集中在 `version.properties`（`versionCode` / `versionName`），本地与 CI 共用；
+也可用 `-PqhVersionCode=... -PqhVersionName=...` 临时覆盖。
+
+### 本地
+
 ```bash
-./gradlew :app:testDebugUnitTest :app:assembleDebug
-# 产物：app/build/outputs/apk/debug/app-debug.apk
+./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+# debug 产物：app/build/outputs/apk/debug/app-debug.apk
+
+./gradlew :app:assembleRelease
+# release 产物：app/build/outputs/apk/release/app-release.apk
 ```
 
-本次提交已在本机验证：**76 个 JVM 单测通过，debug APK 构建成功（约 13.6 MB）**。
-release 读取仓库根目录 `keystore.properties`（不入库），缺失时 `assembleRelease` 直接失败，
-不会产出 debug 签名包。
+本地 release 从仓库根目录 `keystore.properties` 读取签名（该文件不入库），
+或使用环境变量 `KEYSTORE_FILE` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`。
+两者都没有时 `assembleRelease` 直接失败，不会产出 debug 签名包。
+
+### CI / 签名
+
+- `.github/workflows/build.yml`：push / PR 自动跑单测、lint、debug 构建并上传 APK。
+- `.github/workflows/release.yml`：手动触发，输入已存在的 tag（如 `v0.1.1`），
+  在 `release` environment 中解码 `RELEASE_KEYSTORE_BASE64`，构建签名 release，
+  用 `release-trust.properties` 校验证书 SHA-256，然后发布 GitHub Release；
+  如果配置了 `MODULE_REPO_TOKEN`，会用 `[versionCode]-[versionName]` 作为 tag
+  同步到 Xposed-Modules-Repo。
+
+`release` environment 需要以下 secrets：
+
+```text
+RELEASE_KEYSTORE_BASE64    # base64(keystore)
+RELEASE_STORE_PASSWORD
+RELEASE_KEY_ALIAS          # quiethupu
+RELEASE_KEY_PASSWORD
+```
+
+可选 `MODULE_REPO_TOKEN`（对 Xposed-Modules-Repo 有写权限的 PAT）。
+签名密钥只保存在 GitHub Actions secrets，仓库与本地都不需要长期保存。
+
+本次验证：**76 个 JVM 单测通过，`lintDebug` 通过，debug/release 构建成功**。
 
 单测覆盖：Feature 编号/key/默认值、prefs.xml 与 Feature 一致性、Hooks 注册表完整性、
 Config 回退路径、HookState 并发计数与状态隔离、Report 诊断协议。
