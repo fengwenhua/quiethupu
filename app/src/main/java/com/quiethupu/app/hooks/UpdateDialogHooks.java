@@ -5,6 +5,7 @@ import com.quiethupu.app.HookState;
 
 import java.lang.reflect.Method;
 
+import io.github.libxposed.api.XposedInterface;
 import io.github.libxposed.api.XposedModule;
 
 /**
@@ -12,8 +13,13 @@ import io.github.libxposed.api.XposedModule;
  *
  * <p>虎扑更新逻辑在 comp_basic_update 模块，UpdateViewModel.showUpdateDialog(
  * AppCompatActivity, UpdateInfo, Continuation) 是弹窗的唯一展示入口。
- * 该方法是 suspend，直接返回 kotlin.Unit.INSTANCE 表示挂起调用已完成，
- * 调用方继续执行但不会弹出更新框。
+ * 该方法是 suspend，正常返回 kotlin.Unit.INSTANCE；这里直接返回 Unit 表示
+ * “挂起调用已完成”，调用方继续执行但不会弹出更新框。
+ *
+ * <p>release 包经过 R8 后，安装阶段（NIS attachBaseContext 之后）可能还看不到
+ * {@code kotlin.Unit}，所以延迟到方法真正被调用时，从目标对象/Continuation
+ * 的 ClassLoader 再找一次；实在找不到就返回 null——该调用点丢弃返回值，
+ * 不会影响协程继续执行。
  */
 final class UpdateDialogHooks {
 
@@ -30,15 +36,9 @@ final class UpdateDialogHooks {
             if (cls == null) {
                 return;
             }
-            Object unit = unitInstance(cl);
-            if (unit == null) {
-                HookKit.warn(module, f.id + " skip: kotlin.Unit unavailable");
-                HookState.markNotFound(f, "kotlin.Unit 不可用");
-                return;
-            }
             Method show = HookKit.findByNameAndArity(cls, "showUpdateDialog", 3);
             HookKit.install(module, f, "UpdateViewModel#showUpdateDialog", show,
-                    HookKit.constValue(module, f, "update dialog skipped", unit));
+                    interceptShow(module, f, cl));
             HookState.note(f, "更新弹窗：UpdateViewModel#showUpdateDialog 直接返回 Unit");
         } catch (Throwable t) {
             HookKit.error(module, f.id + " install aborted", t);
@@ -46,7 +46,45 @@ final class UpdateDialogHooks {
         }
     }
 
-    private static Object unitInstance(ClassLoader cl) {
+    private static XposedInterface.Hooker interceptShow(XposedModule module, Feature f,
+                                                        ClassLoader installCl) {
+        return chain -> {
+            try {
+                Object unit = unitFrom(loaderOf(chain.getThisObject()));
+                if (unit == null) {
+                    unit = unitFrom(loaderOf(chain.getArg(2)));
+                }
+                if (unit == null) {
+                    unit = unitFrom(Thread.currentThread().getContextClassLoader());
+                }
+                if (unit == null) {
+                    unit = unitFrom(installCl);
+                }
+                HookKit.hit(module, f, unit == null
+                        ? "update dialog skipped (unit unavailable, returning null)"
+                        : "update dialog skipped");
+                // 调用点只检查 COROUTINE_SUSPENDED，不校验返回值类型；null 表示
+                // 协程已完成，不会弹更新框，也不会让调用方 NPE。
+                return unit;
+            } catch (Throwable t) {
+                HookKit.error(module, f.id + " intercept error showUpdateDialog", t);
+                return chain.proceed();
+            }
+        };
+    }
+
+    private static ClassLoader loaderOf(Object object) {
+        try {
+            return object == null ? null : object.getClass().getClassLoader();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static Object unitFrom(ClassLoader cl) {
+        if (cl == null) {
+            return null;
+        }
         try {
             Class<?> unit = Class.forName("kotlin.Unit", false, cl);
             return unit.getField("INSTANCE").get(null);
