@@ -1,5 +1,20 @@
 # 更新日志
 
+## 0.1.2 - 2026-11-06
+
+适配虎扑 **8.2.67.10281（versionCode 12322）**。
+
+### 新增
+
+- AD-12 插屏广告：8.2.67 新增 `com.hupu.adver_interstitial` 模块。
+  在 `HpInterstitialAdCore#loadFromNet` 断源并回调 `loadFail`；
+  `HpInterstitialAd#show` 兜底不展示，回调 `onShowFail`/`onAdClose`。
+
+### 验证
+
+- 原有 13 项功能在 8.2.67 真机全部注册、无 skip，信息流/Banner/弹窗/开屏等继续命中。
+- 新增 AD-12 锚点静态体检通过；32 个锚点全部存在。
+
 ## 0.1.1 - 2026-10-31
 
 真机验证修复版（OnePlus PKH110 / Android 16 / 虎扑 8.2.66.10232）。

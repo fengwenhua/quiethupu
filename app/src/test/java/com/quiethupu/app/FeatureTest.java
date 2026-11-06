@@ -40,13 +40,14 @@ public class FeatureTest {
         EXPECTED_IDS.put("ad_preload", "AD-09");
         EXPECTED_IDS.put("ad_shake_jump", "AD-10");
         EXPECTED_IDS.put("ad_reward_video", "AD-11");
+        EXPECTED_IDS.put("ad_interstitial", "AD-12");
         EXPECTED_IDS.put("ui_update_dialog", "UI-01");
         EXPECTED_IDS.put("pv_clipboard_ad", "PV-01");
     }
 
     @Test
-    public void thirteenFeaturesPresent() {
-        assertEquals("Feature 数量必须是 13", 13, Feature.values().length);
+    public void fourteenFeaturesPresent() {
+        assertEquals("Feature 数量必须是 14", 14, Feature.values().length);
     }
 
     @Test

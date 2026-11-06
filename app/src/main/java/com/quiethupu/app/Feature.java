@@ -48,6 +48,9 @@ public enum Feature {
     REWARD_VIDEO_BLOCK("AD-11", "ad_reward_video",
             R.string.f_ad_reward_video_title, R.string.f_ad_reward_video_summary,
             true, Group.AD, null),
+    INTERSTITIAL_AD_BLOCK("AD-12", "ad_interstitial",
+            R.string.f_ad_interstitial_title, R.string.f_ad_interstitial_summary,
+            true, Group.AD, null),
 
     UPDATE_DIALOG_BLOCK("UI-01", "ui_update_dialog",
             R.string.f_ui_update_dialog_title, R.string.f_ui_update_dialog_summary,

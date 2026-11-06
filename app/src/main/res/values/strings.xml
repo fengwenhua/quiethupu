@@ -79,6 +79,8 @@
     <string name="f_ad_shake_jump_summary">信息流广告不再注册摇一摇传感器，避免误触跳转</string>
     <string name="f_ad_reward_video_title">激励视频/短剧广告</string>
     <string name="f_ad_reward_video_summary">拦截游戏与短剧的激励视频；看广告领奖/解锁会失败</string>
+    <string name="f_ad_interstitial_title">插屏广告</string>
+    <string name="f_ad_interstitial_summary">拦截 H5/页面触发的全屏插屏广告</string>
 
     <!-- 界面精简 -->
     <string name="f_ui_update_dialog_title">更新弹窗屏蔽</string>

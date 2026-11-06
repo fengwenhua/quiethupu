@@ -8,11 +8,11 @@ package com.quiethupu.app;
  */
 public final class VersionGate {
 
-    /** 虎扑 8.2.66.10232（versionCode 12320）：真机验证的适配版本。 */
-    public static final String SUPPORTED_VERSION = "8.2.66.10232";
+    /** 虎扑 8.2.67.10281（versionCode 12322）：真机验证的适配版本。 */
+    public static final String SUPPORTED_VERSION = "8.2.67.10281";
 
     /** 对应的 versionCode。 */
-    public static final long SUPPORTED_VERSION_CODE = 12320L;
+    public static final long SUPPORTED_VERSION_CODE = 12322L;
 
     private VersionGate() {
     }

@@ -65,6 +65,10 @@
             android:icon="@drawable/ic_group_ad"
             android:key="ad_reward_video" />
 
+        <com.quiethupu.app.MaterialSwitchPreference
+            android:icon="@drawable/ic_group_ad"
+            android:key="ad_interstitial" />
+
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/group_ui">

@@ -58,6 +58,8 @@ public final class Hooks {
                 (module, cl, config, f) -> ShakeHooks.install(module, cl));
         map.put(Feature.REWARD_VIDEO_BLOCK,
                 (module, cl, config, f) -> RewardVideoHooks.install(module, cl));
+        map.put(Feature.INTERSTITIAL_AD_BLOCK,
+                (module, cl, config, f) -> InterstitialAdHooks.install(module, cl));
         map.put(Feature.UPDATE_DIALOG_BLOCK,
                 (module, cl, config, f) -> UpdateDialogHooks.install(module, cl));
         map.put(Feature.CLIPBOARD_AD_BLOCK,
