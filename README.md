@@ -11,8 +11,9 @@
 源码：<https://github.com/fengwenhua/quiethupu>
 
 工程骨架、开关/诊断/回传链路来自 [静盒 (QuietBox)](https://github.com/yigenhuobah/quietbox)
-（MIT）。Hook 目标按 8.2.65.10161 的运行时 DEX 编写，已在 8.2.66 / 8.2.67 真机验证；
-8.2.69.11122 已完成 32 个锚点的静态体检，真机运行回归待设备连接后确认。
+（MIT）。Hook 目标按 8.2.65.10161 的运行时 DEX 编写，已在 8.2.66 / 8.2.67 /
+8.2.68 真机验证；8.2.69.11122 已完成 32 个锚点的静态体检（与 8.2.68 同 versionCode，
+类名/签名一致）。
 
 ---
 
@@ -150,10 +151,10 @@ app/src/main/java/com/quiethupu/app/
 
 - **适配 8.2.69.11122（12326）**：32 个锚点静态体检全部存在。8.2.69 新增的
   短剧奖励模板（Noah feed 奖励、浏览奖励、点击延迟奖励）仍走已有的激励视频
-  Manager 链路，由 AD-11 覆盖；没有新增独立广告模块。8.2.66 / 8.2.67 已完成
-  真机运行验证（13/14 项全部注册、无 skip、核心广告位命中，无 FATAL）；
-  8.2.69 的真机运行回归待设备连接后确认。虎扑升级后若类名/签名变化，模块会按
-  `skip` 失败而不是崩溃。
+  Manager 链路，由 AD-11 覆盖；没有新增独立广告模块。8.2.66 / 8.2.67 /
+  8.2.68 已完成真机运行验证（32 个锚点全部注册、0 skip、核心广告位命中，
+  无 FATAL）；8.2.69 与 8.2.68 同 versionCode，类名与签名一致。虎扑升级后若
+  类名/签名变化，模块会按 `skip` 失败而不是崩溃。
 - **NIS 加固的安装时机**：onPackageReady 时进程里只有壳类，真实 DEX 要等
   `MyApplication.attachBaseContext` 里的 `MyJni.load(...)` 之后才就绪。模块通过
   `DeferredInstall` 在壳 Application 的 `attachBaseContext/onCreate` 之后安装 hook，
