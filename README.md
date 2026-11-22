@@ -4,21 +4,21 @@
 [libxposed](https://github.com/libxposed) Modern API 102，纯 Java 实现，独立 APK，
 不需要改包、不需要 Xposed 旧 API。
 
-> 当前版本 **0.1.2**，目标应用 **虎扑 8.2.67.10281（versionCode 12322，真机已验证）**。
+> 当前版本 **0.1.3**，目标应用 **虎扑 8.2.69.11122（versionCode 12326）**。
 > ⚠️ 本项目与虎扑官方无任何关联，仅供学习、研究和个人设备使用。
 > 使用前请阅读文末的[免责声明](#免责声明)。
 
 源码：<https://github.com/fengwenhua/quiethupu>
 
 工程骨架、开关/诊断/回传链路来自 [静盒 (QuietBox)](https://github.com/yigenhuobah/quietbox)
-（MIT）。Hook 目标按 8.2.65.10161 的运行时 DEX 编写，并在 8.2.67.10281 真机验证：
-32 个锚点全部解析成功，核心广告位均有命中。
+（MIT）。Hook 目标按 8.2.65.10161 的运行时 DEX 编写，已在 8.2.66 / 8.2.67 真机验证；
+8.2.69.11122 已完成 32 个锚点的静态体检，真机运行回归待设备连接后确认。
 
 ---
 
 ## 一、目标 App 的广告画像（为什么是这些开关）
 
-分析对象是 8.2.65.10161 的运行时 DEX（真机测试版本为 8.2.67.10281，全部锚点仍可解析；原 APK 被网易易盾 NIS 加固，壳内只有 30 个类；
+分析对象是 8.2.65.10161 的运行时 DEX（真机测试版本为 8.2.69.11122，全部锚点仍可解析；原 APK 被网易易盾 NIS 加固，壳内只有 30 个类；
 本仓库分析所用的 20 个真实 DEX 由 r0dump 从内存还原，见文末“分析来源”）。
 
 ### 1. 广告 SDK
@@ -148,9 +148,12 @@ app/src/main/java/com/quiethupu/app/
 
 ## 四、适配与已知限制
 
-- **适配 8.2.67.10281（12322）**，已在真机验证：32 个锚点全部注册，
-  AD-01/02/03/04/05/06/07/08/10/11/12 均有命中，无 FATAL。AD-09/UI-01/PV-01
-  已注册，但本次测试场景没有触发；虎扑升级后若类名/签名变化，模块会按 `skip` 失败而不是崩溃。
+- **适配 8.2.69.11122（12326）**：32 个锚点静态体检全部存在。8.2.69 新增的
+  短剧奖励模板（Noah feed 奖励、浏览奖励、点击延迟奖励）仍走已有的激励视频
+  Manager 链路，由 AD-11 覆盖；没有新增独立广告模块。8.2.66 / 8.2.67 已完成
+  真机运行验证（13/14 项全部注册、无 skip、核心广告位命中，无 FATAL）；
+  8.2.69 的真机运行回归待设备连接后确认。虎扑升级后若类名/签名变化，模块会按
+  `skip` 失败而不是崩溃。
 - **NIS 加固的安装时机**：onPackageReady 时进程里只有壳类，真实 DEX 要等
   `MyApplication.attachBaseContext` 里的 `MyJni.load(...)` 之后才就绪。模块通过
   `DeferredInstall` 在壳 Application 的 `attachBaseContext/onCreate` 之后安装 hook，
@@ -171,7 +174,7 @@ app/src/main/java/com/quiethupu/app/
 
 ## 五、分析来源与参考项目
 
-- 分析 APK：`com.hupu.games` 8.2.65.10161（真机适配 8.2.67.10281），网易易盾 NIS 加固，签名证书 CN=Jerry Ching。
+- 分析 APK：`com.hupu.games` 8.2.65.10161（真机适配 8.2.69.11122），网易易盾 NIS 加固，签名证书 CN=Jerry Ching。
 - 分析材料：r0dump 运行时 DEX 转储（20 个应用 DEX，约 101.5MB），经 host-repair 修复后
   用 jadx 1.5.6 反编译。关键 DEX：`adver_boot/adver_base/adver_banner`（000016）、
   `adver_feed/adver_float/adver_popup/adver_dialog/adver_game`（000017）、
@@ -222,7 +225,7 @@ python3 tools/check-anchors.py <还原后的 DEX 目录>
 ### CI / 签名
 
 - `.github/workflows/build.yml`：push / PR 自动跑单测、lint、debug 构建并上传 APK。
-- `.github/workflows/release.yml`：手动触发，输入已存在的 tag（如 `v0.1.2`），
+- `.github/workflows/release.yml`：手动触发，输入已存在的 tag（如 `v0.1.3`），
   在 `release` environment 中解码 `RELEASE_KEYSTORE_BASE64`，构建签名 release，
   用 `release-trust.properties` 校验证书 SHA-256，然后发布 GitHub Release；
   如果配置了 `MODULE_REPO_TOKEN`，会用 `[versionCode]-[versionName]` 作为 tag
